@@ -36,7 +36,8 @@ are a total of 17,568 observations in it --
 
 The following R libraries are used to process the data
 
-```{r load_libs, results="hide"}
+
+```r
 library(dplyr)
 library(lubridate)
 library(lattice)
@@ -51,7 +52,8 @@ The following code
 2. loads the data; and
 3. parses date values in the _date_ column
 
-```{r}
+
+```r
 zipfile <- "activity.zip"
 csvfile <- "activity.csv"
 
@@ -71,7 +73,8 @@ This R code extracts the mean and median number of steps taken per day,
 ignoring missing values (`NA`s), and produces a histogram plot of total
 steps per day.
 
-```{r total_steps_per_day}
+
+```r
 steps_per_day <- data %>%
   group_by(date) %>%
   summarise(total = sum(steps, na.rm = TRUE))
@@ -99,9 +102,11 @@ legend(
 )
 ```
 
-The mean number of steps taken per day is `r mean_steps_per_day`.
+![plot of chunk total_steps_per_day](figure/total_steps_per_day-1.png) 
 
-The median number of steps taken per day is `r median_steps_per_day`.
+The mean number of steps taken per day is 9354.23.
+
+The median number of steps taken per day is 10395.
 
 
 ## What is the average daily activity pattern?
@@ -109,7 +114,8 @@ The median number of steps taken per day is `r median_steps_per_day`.
 This R code plots the number of steps taken on each 5-minute interval,
 averaged across all days in the data set, ignoring missing values.
 
-```{r steps_per_interval}
+
+```r
 steps_per_interval <- data %>%
   group_by(interval) %>%
   summarise(average = mean(steps, na.rm = TRUE))
@@ -127,19 +133,23 @@ plot(
 )
 ```
 
-```{r top_interval_by_avg_number_of_steps}
+![plot of chunk steps_per_interval](figure/steps_per_interval-1.png) 
+
+
+```r
 # Find the interval with most steps on the average
 top_interval <- arrange(steps_per_interval, desc(average))[1,]
 ```
 
 On average across all the days in the dataset,
-interval `r top_interval$interval`
-contains the highest number of steps, `r round(top_interval$average, digits = 2)`.
+interval 835
+contains the highest number of steps, 206.17.
 
 
 ## Imputing missing values
 
-```{r incomplete_cases}
+
+```r
 # Observations with values missing
 incomplete_cases <- data[!complete.cases(data),]
 n_incomplete_cases <- nrow(incomplete_cases)
@@ -159,17 +169,18 @@ n_incomplete_days <- nrow(incomplete_days)
 n_fully_incomplete_days <- nrow(fully_incomplete_days)
 ```
 
-There are `r n_incomplete_cases` intervals with missing values
+There are 2304 intervals with missing values
 for _steps_ (coded as `NA`). Their presence may introduce
 bias into some calculations or summaries of the data.
 
-There are `r n_incomplete_days` days with at least one _steps_ value missing,
-of which `r n_fully_incomplete_days` have all 288 values missing.
+There are 8 days with at least one _steps_ value missing,
+of which 8 have all 288 values missing.
 It appears that when data is missing, it is missing for the whole day.
 
 To fill in the blanks, NAs are substituted with the mean number of steps for that 5-minute interval. A new dataset is created that is equal to the original dataset but with the missing data filled in.
 
-```{r imputed_data}
+
+```r
 imputed_data <- data %>%
   group_by(interval) %>%
   mutate(
@@ -199,16 +210,19 @@ hist(
   main = "Original data",
   xlab = "Total number of steps taken per day"
 )
+```
 
+![plot of chunk imputed_data](figure/imputed_data-1.png) 
 
+```r
 imputed_mean_steps_per_day <- round(mean(imputed_steps_per_day$total), digits = 2)
 imputed_median_steps_per_day <- median(imputed_steps_per_day$total)
 ```
 
 | Steps per day | Mean                           | Median                           |
 | ------------- | ------------------------------:| --------------------------------:|
-| Original data | `r mean_steps_per_day`         | `r median_steps_per_day`         |
-| Imputed data  | `r imputed_mean_steps_per_day` | `r imputed_median_steps_per_day` |
+| Original data | 9354.23         | 10395         |
+| Imputed data  | 9354.23 | 10395 |
 
 The values do not differ between original and imputed data.
 Because only whole days were missing from the original data,
@@ -223,7 +237,8 @@ weekdays and weekends, a new factor variable with two levels --
 "weekday" and "weekend" -- is added in the dataset, indicating
 whether a given date is a weekday or weekend day.
 
-```{r weekdays_vs_weekends}
+
+```r
 # For repeatability across locales, make sure we're using en_US.
 invisible(Sys.setlocale("LC_TIME", "en_US.utf8"))
 
@@ -252,6 +267,8 @@ xyplot(
   ylab = "Number of steps"
 )
 ```
+
+![plot of chunk weekdays_vs_weekends](figure/weekdays_vs_weekends-1.png) 
 
 Activity on weekends appears to be more uniformly distributed across the day
 while on weekdays the highest activity levels are concentrated towards the

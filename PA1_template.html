@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<title>Reproducible Research: Peer Assessment 1</title>
+
+<script type="text/javascript">
+window.onload = function() {
+  var imgs = document.getElementsByTagName('img'), i, img;
+  for (i = 0; i < imgs.length; i++) {
+    img = imgs[i];
+    // center an image if it is the only element of its parent
+    if (img.parentElement.childElementCount === 1)
+      img.parentElement.style.textAlign = 'center';
+  }
+};
+</script>
+
+
+
+
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 13px;
+}
+
+body {
+  max-width: 800px;
+  margin: auto;
+  padding: 1em;
+  line-height: 20px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 {
+   font-size:2.2em;
+}
+
+h2 {
+   font-size:1.8em;
+}
+
+h3 {
+   font-size:1.4em;
+}
+
+h4 {
+   font-size:1.0em;
+}
+
+h5 {
+   font-size:0.9em;
+}
+
+h6 {
+   font-size:0.8em;
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre, img {
+  max-width: 100%;
+}
+pre {
+  overflow-x: auto;
+}
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code {
+  font-size: 92%;
+  border: 1px solid #ccc;
+}
+
+code[class] {
+  background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * {
+      background: transparent !important;
+      color: black !important;
+      filter:none !important;
+      -ms-filter: none !important;
+   }
+
+   body {
+      font-size:12pt;
+      max-width:100%;
+   }
+
+   a, a:visited {
+      text-decoration: underline;
+   }
+
+   hr {
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote {
+      padding-right: 1em;
+      page-break-inside: avoid;
+   }
+
+   tr, img {
+      page-break-inside: avoid;
+   }
+
+   img {
+      max-width: 100% !important;
+   }
+
+   @page :left {
+      margin: 15mm 20mm 15mm 10mm;
+   }
+
+   @page :right {
+      margin: 15mm 10mm 15mm 20mm;
+   }
+
+   p, h2, h3 {
+      orphans: 3; widows: 3;
+   }
+
+   h2, h3 {
+      page-break-after: avoid;
+   }
+}
+</style>
+
+
+
+</head>
+
+<body>
+<h1>Reproducible Research: Peer Assessment 1</h1>
+
+<p>This assignment makes use of data from a personal activity monitoring
+device. The device collects data at 5 minute intervals throughout the
+day. The data consists of two months (61 days) of data from an anonymous
+individual collected during the months of October and November, 2012
+and include the number of steps taken in 5 minute intervals each day.</p>
+
+<h2>Source Data</h2>
+
+<ul>
+<li>Dataset: <a href="https://d396qusza40orc.cloudfront.net/repdata/data/activity.zip">Activity monitoring data</a> [52K] - included in this repository.</li>
+</ul>
+
+<p>The variables included in the dataset are:</p>
+
+<ul>
+<li><p><strong>steps</strong>: Number of steps taking in a 5-minute interval (missing
+values are coded as <code>NA</code>)</p></li>
+<li><p><strong>date</strong>: The date on which the measurement was taken in YYYY-MM-DD
+format</p></li>
+<li><p><strong>interval</strong>: Identifier for the 5-minute interval in which
+measurement was taken</p></li>
+</ul>
+
+<p>The dataset is stored in a comma-separated-value (CSV) file and there
+are a total of 17,568 observations in it --
+61 days with exactly 288 observations each.</p>
+
+<h2>Prerequisites: R libraries</h2>
+
+<p>The following R libraries are used to process the data</p>
+
+<pre><code class="r">library(dplyr)
+library(lubridate)
+library(lattice)
+</code></pre>
+
+<h2>Loading and preprocessing the data</h2>
+
+<p>The following code</p>
+
+<ol>
+<li>If neccessary, extracts the data,</li>
+<li>loads the data; and</li>
+<li>parses date values in the <em>date</em> column</li>
+</ol>
+
+<pre><code class="r">zipfile &lt;- &quot;activity.zip&quot;
+csvfile &lt;- &quot;activity.csv&quot;
+
+# Ensure the zip file has been extracted
+if (!file.exists(csvfile)) unzip(zipfile)
+
+# Load and preprocess the data
+data &lt;- csvfile %&gt;%
+  read.csv2(sep = &quot;,&quot;, na.strings = &quot;NA&quot;, colClasses=c(&quot;integer&quot;, &quot;character&quot;, &quot;integer&quot;)) %&gt;%
+  mutate(date = ymd(date))
+</code></pre>
+
+<h2>What is mean total number of steps taken per day?</h2>
+
+<p>This R code extracts the mean and median number of steps taken per day,
+ignoring missing values (<code>NA</code>s), and produces a histogram plot of total
+steps per day.</p>
+
+<pre><code class="r">steps_per_day &lt;- data %&gt;%
+  group_by(date) %&gt;%
+  summarise(total = sum(steps, na.rm = TRUE))
+
+mean_steps_per_day &lt;- round(mean(steps_per_day$total), digits = 2)
+median_steps_per_day &lt;- median(steps_per_day$total)
+
+par(mfrow = c(1,1))
+hist(
+  steps_per_day$total,
+  breaks = 10,
+  main = &quot;Histogram of total steps per day (original data)&quot;,
+  xlab = &quot;Total number of steps taken per day&quot;
+)
+
+abline(v = mean_steps_per_day, col=&quot;blue&quot;)
+abline(v = median_steps_per_day, col=&quot;red&quot;)
+
+legend(
+  x = &quot;topright&quot;,
+  legend = c(&quot;Mean&quot;, &quot;Median&quot;),
+  text.col = c(&quot;blue&quot;,&quot;red&quot;),
+  col = c(&quot;blue&quot;,&quot;red&quot;),
+  lty = 1
+)
+</code></pre>
+
+<p><img src="figure/total_steps_per_day-1.png" alt="plot of chunk total_steps_per_day"> </p>
+
+<p>The mean number of steps taken per day is 9354.23.</p>
+
+<p>The median number of steps taken per day is 10395.</p>
+
+<h2>What is the average daily activity pattern?</h2>
+
+<p>This R code plots the number of steps taken on each 5-minute interval,
+averaged across all days in the data set, ignoring missing values.</p>
+
+<pre><code class="r">steps_per_interval &lt;- data %&gt;%
+  group_by(interval) %&gt;%
+  summarise(average = mean(steps, na.rm = TRUE))
+
+# time series plot (i.e. `type = &quot;l&quot;`)
+# of the 5-minute interval (x-axis)
+# and the number of steps taken, averaged across all days (y-axis)
+plot(
+  steps_per_interval$interval,
+  steps_per_interval$average,
+  type = &quot;l&quot;,
+  main = &quot;Average steps per 5-minute interval&quot;,
+  xlab = &quot;5-minute interval&quot;,
+  ylab = &quot;Average number of steps&quot;
+)
+</code></pre>
+
+<p><img src="figure/steps_per_interval-1.png" alt="plot of chunk steps_per_interval"> </p>
+
+<pre><code class="r"># Find the interval with most steps on the average
+top_interval &lt;- arrange(steps_per_interval, desc(average))[1,]
+</code></pre>
+
+<p>On average across all the days in the dataset,
+interval 835
+contains the highest number of steps, 206.17.</p>
+
+<h2>Imputing missing values</h2>
+
+<pre><code class="r"># Observations with values missing
+incomplete_cases &lt;- data[!complete.cases(data),]
+n_incomplete_cases &lt;- nrow(incomplete_cases)
+
+# Days with at least one observation missing
+incomplete_days &lt;- data %&gt;%
+  group_by(date) %&gt;%
+  summarise(n = n(), nas = sum(is.na(steps))) %&gt;%
+  filter(nas &gt; 0)
+
+# Days with all observations missing, ie. 288 NA&#39;s
+# (288 * 5 min = 1400 min = 24 h)
+fully_incomplete_days &lt;- filter(incomplete_days, nas == 288)
+
+# Count the rows
+n_incomplete_days &lt;- nrow(incomplete_days)
+n_fully_incomplete_days &lt;- nrow(fully_incomplete_days)
+</code></pre>
+
+<p>There are 2304 intervals with missing values
+for <em>steps</em> (coded as <code>NA</code>). Their presence may introduce
+bias into some calculations or summaries of the data.</p>
+
+<p>There are 8 days with at least one <em>steps</em> value missing,
+of which 8 have all 288 values missing.
+It appears that when data is missing, it is missing for the whole day.</p>
+
+<p>To fill in the blanks, NAs are substituted with the mean number of steps for that 5-minute interval. A new dataset is created that is equal to the original dataset but with the missing data filled in.</p>
+
+<pre><code class="r">imputed_data &lt;- data %&gt;%
+  group_by(interval) %&gt;%
+  mutate(
+    steps = ifelse(
+      is.na(steps),
+      as.integer(round(mean(steps, na.rm = TRUE))),
+      steps
+    )
+  )
+
+imputed_steps_per_day &lt;- data %&gt;%
+  group_by(date) %&gt;%
+  summarise(total = sum(steps, na.rm = TRUE))
+
+par(mfrow = c(1,2))
+
+hist(
+  imputed_steps_per_day$total,
+  breaks = 10,
+  main = &quot;Imputed data&quot;,
+  xlab = &quot;Total number of steps taken per day&quot;
+)
+
+hist(
+  steps_per_day$total,
+  breaks = 10,
+  main = &quot;Original data&quot;,
+  xlab = &quot;Total number of steps taken per day&quot;
+)
+</code></pre>
+
+<p><img src="figure/imputed_data-1.png" alt="plot of chunk imputed_data"> </p>
+
+<pre><code class="r">imputed_mean_steps_per_day &lt;- round(mean(imputed_steps_per_day$total), digits = 2)
+imputed_median_steps_per_day &lt;- median(imputed_steps_per_day$total)
+</code></pre>
+
+<table><thead>
+<tr>
+<th>Steps per day</th>
+<th align="right">Mean</th>
+<th align="right">Median</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>Original data</td>
+<td align="right">9354.23</td>
+<td align="right">10395</td>
+</tr>
+<tr>
+<td>Imputed data</td>
+<td align="right">9354.23</td>
+<td align="right">10395</td>
+</tr>
+</tbody></table>
+
+<p>The values do not differ between original and imputed data.
+Because only whole days were missing from the original data,
+imputing with mean values has no impact on the estimated
+daily total number of steps.</p>
+
+<h2>Are there differences in activity patterns between weekdays and weekends?</h2>
+
+<p>To facilitate comparing differences in activity patterns between
+weekdays and weekends, a new factor variable with two levels --
+&quot;weekday&quot; and &quot;weekend&quot; -- is added in the dataset, indicating
+whether a given date is a weekday or weekend day.</p>
+
+<pre><code class="r"># For repeatability across locales, make sure we&#39;re using en_US.
+invisible(Sys.setlocale(&quot;LC_TIME&quot;, &quot;en_US.utf8&quot;))
+
+# 1. Create a new factor variable in the dataset with two levels
+# -- &quot;weekday&quot; and &quot;weekend&quot;
+# indicating whether a given date is a weekday or weekend day.
+data &lt;- mutate(data,
+  day_type = as.factor(
+    ifelse(weekdays(date, TRUE) %in% c(&quot;Sat&quot;, &quot;Sun&quot;), &quot;weekend&quot;, &quot;weekday&quot;)
+  )
+)
+
+# 2. Make a panel plot containing a time series plot (i.e. `type = &quot;l&quot;`)
+# of the 5-minute interval (x-axis) and the average number of steps taken,
+# averaged across all weekday days or weekend days (y-axis).
+steps_per_interval &lt;- data %&gt;%
+  group_by(day_type, interval) %&gt;%
+  summarise(average = mean(steps, na.rm = TRUE))
+
+xyplot(
+  average ~ interval | day_type,
+  data = steps_per_interval,
+  type = &quot;l&quot;,
+  layout = c(1,2),
+  xlab = &quot;Interval&quot;,
+  ylab = &quot;Number of steps&quot;
+)
+</code></pre>
+
+<p><img src="figure/weekdays_vs_weekends-1.png" alt="plot of chunk weekdays_vs_weekends"> </p>
+
+<p>Activity on weekends appears to be more uniformly distributed across the day
+while on weekdays the highest activity levels are concentrated towards the
+start of the day.</p>
+
+</body>
+
+</html>
